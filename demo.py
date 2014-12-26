@@ -35,7 +35,7 @@ def getTerm(date=getDateCN(), seazon=None):
     #   getTerm(2014, 1): 2014 Autumn
     # getTerm(date):
     #   getTerm('2014-09-01')
-    if seazon:
+    if seazon is None:
         year = date
     else:
         year, month, day = date.split('-')
