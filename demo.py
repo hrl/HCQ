@@ -29,12 +29,15 @@ def getDateCN():
     return timeCN.strftime('%Y-%m-%d')
 
 
-def getTerm(date=getDateCN(), seazon=None):
+def getTerm(date=None, seazon=None):
     # getTerm(year, seazon):
     #   getTerm(2014, 0): 2014 Spring
     #   getTerm(2014, 1): 2014 Autumn
-    # getTerm(date):
+    # getTerm([date]):
     #   getTerm('2014-09-01')
+    if date is None:
+        date = getDateCN()
+
     if seazon is not None:
         year = date
     else:
@@ -107,8 +110,13 @@ def loadClassroomDetail(roomList, pqClassroomList):
             roomList.append((classrommName, classroomDetail))
 
 
-def queryClass(Build=BuildDict['w12'], QueryDate=getDateCN(), Term=getTerm()):
+def queryClass(Build=BuildDict['w12'], QueryDate=None, Term=None):
     # Init
+    if QueryDate is None:
+        QueryDate = getDateCN()
+    if Term is None:
+        Term = getTerm()
+
     roomList = []
     queryUrl = "http://202.114.5.131/index.aspx"
     postDict = {
