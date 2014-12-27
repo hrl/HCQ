@@ -13,7 +13,7 @@ TEMPLATE_DIR = os.path.join(BASE_DIR, 'templates/').replace('\\', '/')
 STATIC_DIR = os.path.join(BASE_DIR, 'static/').replace('\\', '/')
 
 site_settings = {
-    "debug": True,
+    "debug": False,
     "cookie_secret": "__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
     "xsrf_cookies": True,
     "autoescape": None,
