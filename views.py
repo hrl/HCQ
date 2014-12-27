@@ -68,13 +68,16 @@ class ClassCacheHandler(base.CacheFetchHandler):
             year = int(year)
             month = int(month)
             day = int(day)
+            Term = base.get_Term(QueryDate)
+            Term_today = base.get_Term()
             assert 2009 <= year
             assert 1 <= month <= 12
             assert 1 <= day <= 31
+            assert Term == Term_today
         except:
             QueryDate = base.get_date_CN()
+            Term = base.get_Term(QueryDate)
 
-        Term = base.get_Term(QueryDate)
         cache_code = "%s|%s" % (QueryDate, Build)
 
         while True:
