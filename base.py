@@ -8,6 +8,7 @@ import tornado.web
 import tornado.gen
 from tornado.ioloop import IOLoop
 from tornado.httputil import HTTPHeaders
+from tornado.httpclient import HTTPError
 from tornado.httpclient import AsyncHTTPClient
 from tornado.httpclient import HTTPRequest
 
@@ -43,9 +44,9 @@ class RedisHandler(BaseHandler):
             current_status = redis_cli.get(cache_code)
 
         if current_status:
-            tornado.gen.Return(current_status)
+            raise tornado.gen.Return(current_status)
         else:
-            tornado.gen.Return(None)
+            raise tornado.gen.Return(None)
 
 
 class CacheFetchHandler(RedisHandler):
@@ -71,9 +72,9 @@ class CacheFetchHandler(RedisHandler):
 
         if str(response.code)[0] == "2":
             pq = PyQuery(response.body.decode('utf8', 'ignore'))
-            tornado.gen.Return(pq)
+            raise tornado.gen.Return(pq)
         else:
-            tornado.gen.Return(None)
+            raise tornado.gen.Return(None)
 
 
 def conn_redis():
