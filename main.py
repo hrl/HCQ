@@ -6,7 +6,12 @@ import tornado.process
 
 from settings import site_settings
 
+from views import (
+    ClassCacheHandler,
+)
+
 application = tornado.web.Application([
+    (r"/api/classroom/query", ClassCacheHandler),
 ], **site_settings)
 
 if __name__ == "__main__":
