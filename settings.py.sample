@@ -22,6 +22,7 @@ site_settings = {
     "template_path": TEMPLATE_DIR,
     "static_path": STATIC_DIR,
     "cache_fetch_timeout": 30,
+    "cache_timeout": 3600*24,
 }
 
 redis_settings = {
@@ -32,6 +33,7 @@ redis_settings = {
 query_settings = {
     'classroom': {
         'Build': {
+            'default': '13',
             'w12': '13',
             'e5': '11',
             'e9': '7',
