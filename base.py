@@ -35,7 +35,7 @@ class RedisHandler(BaseHandler):
     def check_cache(self, redis_cli, cache_code):
         current_status = redis_cli.get(cache_code)
         while current_status:
-            if current_status == "fetching":
+            if current_status.decode('utf8') == "fetching":
                 pass
             else:
                 break
