@@ -57,12 +57,24 @@ class ClassCacheHandler(base.CacheFetchHandler):
         # Init
         Build = self.get_argument('Build', 'default')
         QueryDate = self.get_argument('QueryDate', base.get_date_CN())
-        Term = base.get_Term(QueryDate)
 
         Build_dict = query_settings['classroom']['Build']
         if Build not in Build_dict:
             Build = 'default'
         Build = Build_dict[Build]
+
+        try:
+            year, month, day = QueryDate.split('-')
+            year = int(year)
+            month = int(month)
+            day = int(day)
+            assert 2009 <= year
+            assert 1 <= month <= 12
+            assert 1 <= day <= 31
+        except:
+            QueryDate = base.get_date_CN()
+
+        Term = base.get_Term(QueryDate)
         cache_code = "%s|%s" % (QueryDate, Build)
 
         while True:
