@@ -98,6 +98,8 @@ class ClassCacheHandler(base.CacheFetchHandler):
                     room_list = yield self.query_class(Build, QueryDate, Term)
                     room_list_json = json.dumps(room_list)
                     redis_cli.set(cache_code, room_list_json)
+                    redis_cli.expire(cache_code,
+                                     site_settings['cache_timeout'])
                     break
                 else:
                     # Wait
