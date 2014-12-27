@@ -1,5 +1,6 @@
-import json
 import re
+import json
+import urllib.parse
 
 import tornado.web
 import tornado.gen
@@ -21,6 +22,35 @@ import base
 redis_cli = base.conn_redis()
 
 
+class ClassQueryHandler(base.BaseHandler):
+    def get(self):
+        self.render('classroom.html',
+                    get_date_CN=base.get_date_CN,
+                    response_dict={'status': -1})
+
+    @tornado.gen.coroutine
+    def post(self):
+        query_dict = {
+            'Build': self.get_argument('Build', 'default'),
+            'QueryDate': self.get_argument('QueryDate', base.get_date_CN()),
+        }
+        query_string = urllib.parse.urlencode(query_dict)
+        response = yield AsyncHTTPClient().fetch(
+            "http://127.0.0.1:%d" % site_settings["port"]
+            + "/api/classroom/query"
+            + '?%s' % query_string)
+        if response.code == 200:
+            response_dict = json.loads(response.body.decode('utf8'))
+        else:
+            response_dict = {
+                'status': 1,
+                'error': '服务器内部错误',
+            }
+        self.render('classroom.html',
+                    get_date_CN=base.get_date_CN,
+                    response_dict=response_dict)
+
+
 class ClassCacheHandler(base.CacheFetchHandler):
     @tornado.gen.coroutine
     def get(self):
@@ -40,7 +70,7 @@ class ClassCacheHandler(base.CacheFetchHandler):
             cache_ans = yield self.check_cache(redis_cli, cache_code)
             if cache_ans is not None:
                 # Cache Hit
-                self.finish(cache_ans)
+                room_list = json.loads(cache_ans.decode('utf8'))
                 break
             else:
                 # Cache Miss
@@ -53,11 +83,19 @@ class ClassCacheHandler(base.CacheFetchHandler):
                     room_list = yield self.query_class(Build, QueryDate, Term)
                     room_list_json = json.dumps(room_list)
                     redis_cli.set(cache_code, room_list_json)
-                    self.finish(room_list_json)
                     break
                 else:
                     # Wait
                     pass
+
+        response_dict = {
+            'status': 0,
+            'Build': Build,
+            'QueryDate': QueryDate,
+            'room_list': room_list,
+        }
+        response_json = json.dumps(response_dict)
+        self.finish(response_json)
 
     @tornado.gen.coroutine
     def query_class(self, Build, QueryDate, Term):
