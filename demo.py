@@ -2,6 +2,7 @@ import urllib.request
 import urllib.parse
 import datetime
 import re
+from collections import OrderedDict
 from pprint import pprint
 
 from pyquery import PyQuery
@@ -107,17 +108,18 @@ def loadClassroomDetail(roomList, pqClassroomList):
         classroomDetail = classroomDetail.strip(', ')
 
         if classroomDetail:
-            roomList.append((classrommName, classroomDetail))
+            roomList[classrommName] = classroomDetail
 
 
-def queryClass(Build=BuildDict['w12'], QueryDate=None, Term=None):
+def queryClass(Build=BuildDict['w12'], QueryDate=None, Term=None,
+               queryAll=False):
     # Init
     if QueryDate is None:
         QueryDate = getDateCN()
     if Term is None:
         Term = getTerm()
 
-    roomList = []
+    roomList = OrderedDict()
     queryUrl = "http://202.114.5.131/index.aspx"
     postDict = {
         'Term': Term,
@@ -145,6 +147,11 @@ def queryClass(Build=BuildDict['w12'], QueryDate=None, Term=None):
     postDict['ScriptManager1'] = 'UpdatePanel1|btnRightall'
     postDict['btnRightall'] = '>>'
     pqClass = loadPagePQ(opener, queryUrl, postDict)
+    if queryAll:
+        classroomNameList = pqClass('#GroupP2').children()
+        for i in range(len(classroomNameList)):
+            classroomName = classroomNameList.eq(i).text()
+            roomList[classroomName] = '1-10'
 
     # Clean Dict
     del postDict['ScriptManager1']
