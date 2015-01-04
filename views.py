@@ -1,6 +1,7 @@
 import re
 import json
 import urllib.parse
+from collections import OrderedDict
 
 import tornado.web
 import tornado.gen
@@ -34,6 +35,8 @@ class ClassQueryHandler(base.BaseHandler):
             'Build': self.get_argument('Build', 'default'),
             'QueryDate': self.get_argument('QueryDate', base.get_date_CN()),
         }
+        if self.get_argument('queryAll', None):
+            query_dict['queryAll'] = 'on'
         query_string = urllib.parse.urlencode(query_dict)
         response = yield AsyncHTTPClient().fetch(
             "http://127.0.0.1:%d" % site_settings["port"]
@@ -57,6 +60,11 @@ class ClassCacheHandler(base.CacheFetchHandler):
         # Init
         Build = self.get_argument('Build', 'default')
         QueryDate = self.get_argument('QueryDate', base.get_date_CN())
+        queryAll = self.get_argument('queryAll', None)
+        if queryAll is None:
+            queryAll = False
+        else:
+            queryAll = True
 
         Build_dict = query_settings['classroom']['Build']
         if Build not in Build_dict:
@@ -78,7 +86,7 @@ class ClassCacheHandler(base.CacheFetchHandler):
             QueryDate = base.get_date_CN()
             Term = base.get_Term(QueryDate)
 
-        cache_code = "%s|%s" % (QueryDate, Build)
+        cache_code = "%s|%s|%s" % (QueryDate, Build, queryAll)
 
         while True:
             # Check Cache
@@ -95,7 +103,8 @@ class ClassCacheHandler(base.CacheFetchHandler):
                                      site_settings['cache_fetch_timeout'])
 
                     # Fetch Classroom Detail from HUST
-                    room_list = yield self.query_class(Build, QueryDate, Term)
+                    room_list = yield self.query_class(Build, QueryDate, Term,
+                                                       queryAll)
                     room_list_json = json.dumps(room_list)
                     redis_cli.set(cache_code, room_list_json)
                     redis_cli.expire(cache_code,
@@ -111,13 +120,15 @@ class ClassCacheHandler(base.CacheFetchHandler):
             'QueryDate': QueryDate,
             'room_list': room_list,
         }
+        if queryAll:
+            response_dict['queryAll'] = 'on'
         response_json = json.dumps(response_dict)
         self.finish(response_json)
 
     @tornado.gen.coroutine
-    def query_class(self, Build, QueryDate, Term):
+    def query_class(self, Build, QueryDate, Term, queryAll):
         # Init
-        room_list = []
+        room_list = OrderedDict()
         query_url = "http://202.114.5.131/index.aspx"
         post_dict = {
             'Term': Term,
@@ -141,6 +152,11 @@ class ClassCacheHandler(base.CacheFetchHandler):
         post_dict['ScriptManager1'] = 'UpdatePanel1|btnRightall'
         post_dict['btnRightall'] = '>>'
         pq_class = yield self.load_page_pq(base_headers, query_url, post_dict)
+        if queryAll:
+            classroom_name_list = pq_class('#GroupP2').children()
+            for i in range(len(classroom_name_list)):
+                classroom_name = classroom_name_list.eq(i).text()
+                room_list[classroom_name] = '1-10'
 
         # Clean Dict
         del post_dict['ScriptManager1']
@@ -188,7 +204,12 @@ class ClassCacheHandler(base.CacheFetchHandler):
 
             page_current += 1
 
-        raise tornado.gen.Return(room_list)
+        # Convert OrderedDict to List to keep order in json
+        new_room_list = []
+        for name, detail in room_list.items():
+            new_room_list.append([name, detail])
+
+        raise tornado.gen.Return(new_room_list)
 
     def load_classroom_detail(self, room_list, pq_classroom_list):
         for i in range(1, len(pq_classroom_list)):
@@ -219,4 +240,4 @@ class ClassCacheHandler(base.CacheFetchHandler):
             classroom_detail = classroom_detail.strip(', ')
 
             if classroom_detail:
-                room_list.append((classroom_name, classroom_detail))
+                room_list[classroom_name] = classroom_detail
